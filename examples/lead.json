@@ -1,0 +1,7 @@
+{
+  "source": "form",
+  "name": "Dana Whitfield",
+  "email": "dana@harborline-logistics.example",
+  "company": "Harborline Logistics",
+  "message": "We are a 120-person logistics company. We need a web platform for dispatchers plus a driver mobile app (Flutter is fine) integrated with our ERP. Budget is around $80k and we want to launch in 4 months."
+}
