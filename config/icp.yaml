@@ -1,0 +1,187 @@
+# Ideal Customer Profile and scoring rules.
+#
+# This example describes a software studio that builds web platforms, mobile
+# apps and AI agents. Copy it and edit every section to match your business.
+# All keyword matching is case-insensitive and on word boundaries.
+
+company:
+  name: Example Studio
+  offer: custom web platforms, mobile apps, CRM/ERP systems and AI agents
+  signature: "— The Example Studio team"
+
+# Free text given to the LLM, describing who you want to work with.
+description: >
+  Funded startups and established small-to-mid-size companies (10-1000 people) that need a
+  custom software product built or extended: a web platform, a mobile app, an internal
+  CRM/ERP tool or an AI agent / LLM integration. Typical projects are 20k-250k USD and start
+  within 1-6 months. We do not do unpaid work, equity-only deals, homework, or gambling/adult
+  products, and we do not buy SEO or marketing services.
+
+# Final score = weights.rules * rule score + weights.llm * model score (normalized).
+weights:
+  rules: 0.6
+  llm: 0.4
+
+# The five criteria below share 100 points (weights).
+budget:
+  weight: 30
+  currency: USD
+  # Approximate rates used to convert budgets into `currency`. Update them occasionally.
+  fx: { USD: 1.0, EUR: 1.08, GBP: 1.27, CAD: 0.73, AUD: 0.66, CHF: 1.13 }
+  bands:
+    - { min: 50000, score: 1.0 }
+    - { min: 20000, score: 0.85 }
+    - { min: 8000, score: 0.5 }
+    - { min: 3000, score: 0.2 }
+    - { min: 0, score: 0.0 }
+  unknown_score: 0.4
+
+timeline:
+  weight: 15
+  # Matched on months until the lead wants to start or launch.
+  bands:
+    - { max: 0.75, score: 0.8 }   # ASAP: great intent, but often unrealistic
+    - { max: 6, score: 1.0 }
+    - { max: 12, score: 0.6 }
+    - { score: 0.3 }              # later than a year
+  unknown_score: 0.5
+  exploring_score: 0.15
+
+company_size:
+  weight: 15
+  # Matched on number of people.
+  bands:
+    - { min: 200, score: 1.0 }
+    - { min: 20, score: 0.9 }
+    - { min: 5, score: 0.6 }
+    - { min: 1, score: 0.25 }
+  unknown_score: 0.45
+
+industry:
+  weight: 20
+  target:
+    fintech: [fintech, payments, banking, lending, insurance, insurtech, wealth management, accounting]
+    healthcare: [healthcare, health tech, clinic, clinics, telemedicine, patients, medical, pharmacy]
+    logistics: [logistics, fleet, delivery, warehouse, supply chain, freight, shipping]
+    ecommerce: [ecommerce, e-commerce, online store, marketplace, retail, d2c]
+    saas: [saas, b2b software, subscription software, platform startup]
+    education: [edtech, e-learning, online courses, school, university, lms]
+    real_estate: [real estate, proptech, property management, rentals]
+    hospitality: [restaurant, restaurants, hotel, hotels, food delivery, hospitality]
+  unknown_score: 0.35
+
+need:
+  weight: 20
+  # A lead mentioning `full_match_count` or more of these gets the full weight.
+  full_match_count: 2
+  services:
+    web_platform: [web platform, web app, web application, portal, dashboard, admin panel, saas platform, website rebuild]
+    mobile_app: [mobile app, ios, android, flutter, react native, app store]
+    crm_erp: [crm, erp, back office, internal tool, inventory system, order management]
+    ai_agents: [ai agent, ai agents, chatbot, llm, gpt, rag, ai assistant, machine learning, automation]
+    integrations: [api integration, integrations, integrate, payment gateway, stripe, hubspot, salesforce]
+    mvp: [mvp, prototype, proof of concept, product development]
+
+# Extra points for writing from a company domain rather than a free mailbox.
+corporate_email_bonus: 5
+free_email_domains:
+  [gmail.com, googlemail.com, yahoo.com, outlook.com, hotmail.com, live.com, icloud.com, aol.com, proton.me, protonmail.com, gmx.com, mail.com]
+
+red_flags:
+  - id: no_budget
+    description: wants work for free, equity only or revenue share only
+    patterns: [equity only, for equity, revenue share only, no budget, unpaid, for free, free of charge, pay you later, sweat equity]
+    penalty: 35
+    disqualify: true
+  - id: homework
+    description: student assignment or thesis
+    patterns: [homework, assignment, my thesis, university project, course project, coursework]
+    penalty: 35
+    disqualify: true
+  - id: excluded_industry
+    description: industry we do not work with
+    patterns: [casino, gambling, betting, sportsbook, adult content, escort]
+    penalty: 50
+    disqualify: true
+  - id: job_seeker
+    description: a job application, not a project
+    patterns: [my resume, my cv, looking for a job, job opening, internship, hire me, open positions]
+    penalty: 40
+    disqualify: true
+  - id: unrealistic_scope
+    description: very large scope with a tiny budget
+    patterns: [clone of uber, clone of amazon, like facebook but, next facebook, for 500 dollars]
+    penalty: 15
+
+spam:
+  patterns:
+    - seo services
+    - backlinks
+    - guest post
+    - rank your website
+    - first page of google
+    - link building
+    - lead generation services
+    - we offer outsourcing
+    - white label development
+    - dedicated developers at
+    - crypto investment
+    - forex signals
+    - limited time offer
+    - click here
+    - unsubscribe
+    - wire transfer
+    - inheritance
+    - viagra
+  pattern_weight: 0.35
+  max_links: 3
+  link_weight: 0.3
+  threshold: 0.6
+  disposable_domains: [mailinator.com, guerrillamail.com, 10minutemail.com, tempmail.com, yopmail.com, trashmail.com]
+
+tiers:
+  hot: 70
+  warm: 45
+
+# Which outputs receive each tier. An output also has to be configured via env vars.
+routing:
+  hot: [slack, hubspot, pipedrive, webhook]
+  warm: [hubspot, pipedrive, webhook]
+  cold: [webhook]
+  spam: []
+
+# Used when no LLM is configured (or it is unavailable / the lead looks like an injection attempt).
+reply_templates:
+  hot: |
+    Hi {name},
+
+    Thanks for reaching out to {company}. Your project sounds like a great fit for what we do.
+    Could we set up a 30-minute call this week to go through goals, scope and timeline?
+
+    {signature}
+  warm: |
+    Hi {name},
+
+    Thanks for getting in touch with {company}. To give you a useful answer, could you share a bit
+    more about the scope, your timeline and the budget range you have in mind?
+
+    {signature}
+  cold: |
+    Hi {name},
+
+    Thank you for your message. It doesn't look like we're the right fit for this right now,
+    but we're happy to stay in touch if your plans change.
+
+    {signature}
+
+# CRM-specific settings passed to the adapters.
+crm:
+  hubspot:
+    # Extra contact properties per tier (values must be valid for your HubSpot portal).
+    properties_by_tier:
+      hot: { lifecyclestage: salesqualifiedlead }
+      warm: { lifecyclestage: lead }
+  pipedrive:
+    # Lead label UUIDs from your Pipedrive account, per tier (optional).
+    label_ids_by_tier: {}
+    owner_id: null
