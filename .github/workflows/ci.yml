@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - run: uv sync --frozen
+      - name: Lint
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+      - name: Type-check
+        run: uv run mypy
+      - name: Tests
+        run: uv run pytest
+      - name: Eval (rules only, must stay >= 90%)
+        run: uv run lead-qualifier eval --today 2026-10-14 --min-accuracy 0.9
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build image
+        run: docker build -t lead-qualifier:ci .
+      - name: Smoke test
+        run: |
+          docker run -d --name lq -p 8000:8000 -e WEBHOOK_SECRET=ci lead-qualifier:ci
+          for i in $(seq 1 30); do curl -fsS localhost:8000/healthz && exit 0; sleep 1; done
+          docker logs lq; exit 1
