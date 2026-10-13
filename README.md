@@ -206,8 +206,11 @@ import hashlib, hmac, json, time, httpx
 body = json.dumps(lead).encode()
 ts = str(int(time.time()))
 sig = hmac.new(SECRET.encode(), f"{ts}.".encode() + body, hashlib.sha256).hexdigest()
-httpx.post("https://leads.example.com/leads", content=body,
-           headers={"content-type": "application/json", "X-Lead-Timestamp": ts, "X-Lead-Signature": f"sha256={sig}"})
+httpx.post(
+    "https://leads.example.com/leads",
+    content=body,
+    headers={"content-type": "application/json", "X-Lead-Timestamp": ts, "X-Lead-Signature": f"sha256={sig}"},
+)
 ```
 
 `lead-qualifier sign body.json` prints the headers for a file, and `lead-qualifier send lead.json --url …` signs and posts it.
@@ -249,11 +252,14 @@ Every adapter retries `429`/`5xx` and network errors (honouring `Retry-After`) a
 # my_package/outputs.py
 from lead_qualifier.models import OutputResult
 
+
 class TeamsOutput:
     name = "teams"
+
     async def send(self, lead, result) -> OutputResult:
         ...
         return OutputResult(output=self.name, ok=True)
+
 
 def factory(settings, icp):
     return TeamsOutput()  # or None when not configured
